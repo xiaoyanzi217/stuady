@@ -1,0 +1,193 @@
+# 加载模块
+
+- 加载模块
+- 创建模块
+- 使用 node_modules 文件夹
+ 
+## 理解 Node 如何加载模块
+
+在 Node 中既可以用文件路径也可以用名称来引用模块，除非是核心模块，否则用名称引用的模块最终都会被映射为一个文件路径。 Node 核心模块将一些核心函数暴露给程序员，他们在 Node 进程启用时会被预先载入。
+
+> var module = require('module_name');
+
+上面的代码会导入一个核心模块或者由NPM安装的模块，require 函数会返回一个对象，该对象表示模块对象对外暴露的 JavaScript API。
+
+## 导出模块
+
+##### 在 Node 中 CommonJS模块系统是文件之间共享对象的或函数的唯一方式。文件的模块是一一对应的。
+
+> function Circle(x,y,z){
+
+> function Z_squared(){
+
+> return Math.pow(z,2);}
+
+> function area(){
+
+>return Math.PI * Z_squared()}
+
+> return {
+
+> area:area};}
+
+> module.exports = Circle;
+
+>> module是一个变量，他表示当前模块自身。而 module.exports 表示模块向需要它的脚本所导出的对象，它可以是任意对象。
+
+##### 导出复杂对象：module.exports被初始化为一个空对象，可以为这个空对象附加上任意想导出的对象。 如，可以设计模块，让其导出一组函数。
+
+> function printA(){
+
+> console.log('A')；}
+
+> function printB(){
+
+> console.log('B');}
+ 
+> function printC(){
+
+>console.log('C');}
+
+> module.exports.printA = printA;
+
+> module.exports.printB = printB;
+
+> module.exports.pi = Math.PI；
+
+该函数导出两个函数（printA 和 printB）以及一个数字(pi),使用该模块的客户脚本如下所示：
+
+> var myModule2. = require('./myModule2');
+
+> myModule2.printA;  //->A
+
+> myModule2.printB; //->B
+
+> console.log(myModule2.pi);  //->3.1415926
+
+## 加载模块
+
+### 加载核心模块
+
+核心模块：Node 中的二进制形式发布的模块。只能通过模块名引用，而不能通过文件路径引用。
+
+加载和使用 http 核心模块：
+
+> var http = require('http');
+
+### 加载文件模块
+
+通过提供绝对路径从文件系统中加载非核心模块
+
+> var myModule = require('/home/pedro/my_module/my_module');
+
+也可以提供基于当前文件的相对路径
+
+> var myModule = require('my_module/my_module');
+
+> var myModule = require('./lib/my_module'); 
+
+ 两条语句是等效的：
+> 
+> var myModule = require('./lib/my_module');
+> 
+> var myModule = require('./lib/my_module.js');
+
+### 加载文件夹模块
+
+使用文件夹路径来加载模块
+
+> var myModule = require('./myModuleDir');
+
+### 从 node_module 文件夹加载
+
+如果一个模块既不是相对路径也不是核心路径，那么 Node 会尝试在当前目录下的 Node_modules 文件夹中查找该代码。
+
+> var myModule = require('./myMmodule.js');
+
+### 缓存模块
+
+模块首次加载会被缓存起来
+
+> console,log('module my_module initiakizing……');
+
+> module.exports = function () {
+
+> console.log('Hi!');}
+
+> console.log('my_module initiakized.');
+
+然后使用如下代码的脚本加载一次上述模块：
+
+> var myModuleInstance1 = require('./my_module'); 
+
+则会输出一下信息
+
+> module my_module initiakizing……
+
+> module my_module initiakized.
+
+如果两次加载还模块，
+
+> var myModuleInstance1 = require('./my_module'); 
+
+> var myModuleInstance12= require('./my_module'); 
+
+输出信息并没有发生变化
+
+> module my_module initiakizing……
+
+> module my_module initiakized.
+
+# 应用缓冲区处理、编码和解码二进制数据
+
+- 理解 Node 中为何需要缓冲区
+
+- 用字符串创建缓冲区
+
+- 用缓冲区转换成字符串
+
+- 在缓冲区中处理数据
+
+- 切分和复制缓冲区
+
+## 创建缓冲区
+
+ 1.  可以使用 UTF——8 编码格式的字符串来创建缓冲区，示例代码如下：
+
+		var buf = new Buffer('Hello world');
+
+2.  只要指定编码格式作为构造函数的第二个参数，也可以用其他编码格式的字符串创建缓冲区：
+
+        var buf = new Buffer('8bsfs32','saf324');
+
+3.  可以被接受的编码格式及他们的标识符如下：
+
+  - ascii -- ASCII
+
+  - utf8 -- UTF8
+
+  - base64 -- Base64
+
+>如果缓冲区没有用具体内容初始化，则可以通过指定容量大小来创建缓冲区，以备将来容纳数据。可以通过指定长度创建新的缓冲区，如下所示：
+
+>> var Buf = new Buffer(1024);//创建长度为1024的缓冲区
+
+## 在缓冲区中获取和设置数据
+ 
+在创建或是获取缓冲区后，你也许想要查看或是修改其内容，可以使用 [] 操作符来访问缓冲区的某个字节，例如：
+
+> var buf = new Buffer("my buffer content"); 
+
+> // 访问Buf缓冲区的第10个字节
+
+> console.log(buf[10]);
+
+>>**注意：当创建一个已被初始化的缓存区时，请记住该缓存区中包含的数据并非是0，而是一些随机值**
+
+>> var buf = new Buffer (1024);
+>> console.log(buf[100]); 
+
+>同样也可以处理任意位置上的数据：
+
+>buf[99] = 125; //将第100个位置上的数据设置为125
+
