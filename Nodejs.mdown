@@ -36,33 +36,33 @@
 
 2.  导出复杂对象：module.exports被初始化为一个空对象，可以为这个空对象附加上任意想导出的对象。 如，可以设计模块，让其导出一组函数。
 
-       function printA(){
+        function printA(){
 
            console.log('A')；}
 
-      function printB(){
+        function printB(){
 
            console.log('B');}
 
-       function printC(){
+        function printC(){
 
            console.log('C');}
 
-       module.exports.printA = printA;
+        module.exports.printA = printA;
 
-       module.exports.printB = printB;
+        module.exports.printB = printB;
 
-       module.exports.pi = Math.PI;
+        module.exports.pi = Math.PI;
 
-      该函数导出两个函数（printA 和 printB）以及一个数字(pi),使用该模块的客户脚本如下所示：
+该函数导出两个函数（printA 和 printB）以及一个数字(pi),使用该模块的客户脚本如下所示：
 
-       var myModule2. = require('./myModule2');
+        var myModule2. = require('./myModule2');
 
           myModule2.printA; //->A
 
           myModule2.printB; //->B
 
-       console.log(myModule2.pi); //->3.1415926
+        console.log(myModule2.pi); //->3.1415926
 
 ## 加载模块
 
