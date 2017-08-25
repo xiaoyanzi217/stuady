@@ -278,4 +278,95 @@
 
         本例中，将一个内联匿名函数传递给 fs.readFile 函数。作为其第二个函数，其实这就是在使用 CPS ，因为这个内联匿名函数内将函数执行继续下去了。
 
-## 理解事件反射器模型
+## 理解事件发射器模型
+
+事件发射器就是就是可以发射事件的对象，而事件监听器则是绑定到事件发射器上的代码，负责监听特定类型的事件。
+
+          var req = http.require(option,function(require){
+              require.on("data",function(data){
+                  console.log("some data from the require",data);
+              });
+              response.on("end",function(){
+                  console.log("response ended");
+              });
+          });
+          req.end();
+
+**Node 的 http.require API （后面将介绍）创建了一个 HTTP 请求，并将其发送到远程服务器。第一行用到了后继传递风格，传递了一个当 HTTP 服务器相应时就会被调用的内联函数。HTTP 请求API再此处应用 CPS 是因为 http.require 函数执行完毕之后，程序还要继续运行下去**
+
+
+## 理解事件类型
+
+虽然事件发射器是服务任意类型事件的通用接口，但在 Node 的实现中只有一个特例  ，即 “error” 事件。Node中的大多数事件发射器实现在程序发生错误时都会发射 “error ”事件。如果程序员选择不监听 “error” 事件，则当 error 事件发生时，事件发射器会注意到它，并向上抛出一个未捕获的异常。
+
+## 应用事件发射器 API
+
+任何实现了事件发射器模型的对象（比如 TCP 套接字、HTTP 请求）都实现了如下所示的一组方法：
+
+- addLinstener 和 .on -----为指定类型的事件添加事件监听器
+
+- .once ------为指定类型的事件绑定一个仅会被调用一次的事件监听器
+
+- .removeEventListener ------删除绑定到指定事件上的某个指定的事件监听器。
+
+- removeAllEventListener-------删除绑定到指定事件上的所有事件监听器。
+
+### 使用 addLinstener() 和 .on()绑定回调函数
+
+通过指定事件类型和回调函数，就可以注册当事件发生时所要调用的操作。例如，当有可用的数据块时，文件可独流就会发射 “data” 事件。下面的代码展示了如何通过传入一个回调函数来通知发生了 “data” 事件：
+
+        function receiveData(data){
+          console.log("got data from file read stream:%j",data);
+        }
+        readStream.addLinstener("data",receiveData);
+
+还可以用函数 .on来代替 .addLinstener 函数，它只是 .addLinstener 的简写形式，下面这段代码和上面那段代码是等效的：
+
+        function receiveData(data){
+          console.log("got data from file read stream: %j",data);
+        }
+
+在上面的代码中用一个事先声明的命名函数作为回调函数，当然也可以使用内联匿名函数来替代命名函数以简化代码：
+
+        readStream.on("data",function(data){
+          console.log("got data from file read stream:%j",data);
+        });
+
+正如前面所指的那样，传递给回调函数的参数取决于特定的事件发射器对象与事件类型，它并没有被标准化， “data” 事件可能会传递数据缓冲区， "error" 事件可能会传递一个错误对象，而流的 “end” 事件则不会向事件监听器传递任何参数。
+
+### 绑定多个事件监听器
+
+事件发射器模式允许多个事件监听器监听同一事件发射器发射的同一类型的事件。例如：
+
+        readStream.on("data",function(data){
+          console.log('I hava some data here.');
+        })
+        readStream.on("data",function(data){
+          console.log('I hava some data here too.');
+        })
+
+在上面的代码中，readStream 对象的 “data” 类型事件上绑定了两个函数，每当 readStream 对象发射 "data" 事件时，就会看到如下所示的输出信息：
+
+        I hava some data here.
+        I hava some data here too.
+
+> 根据事件类型，事件发射器负责按照事件所绑定的监听器的注册顺序依次调用事件监听器，这意味着两件事：
+   - 某个事件监听器也许并不会在事件发射之后立即被调用，也许在这之前会有别的事件监听器被调用。
+   - 异常被抛出到堆栈并不正常，它通常是由代码中的错误引起的。当事件被发射时如果某个事件监听器在被调用时抛出错误，可能会导致一些事件监听器永远都不会被调用。在这种情况下，事件发射器将会捕捉到错误，也许还会处理它。
+
+### 使用 .removeListener() 从事件发射器中删除一个事件监听器
+
+如果希望当一个对象发射了某个特定事件时不再受到通知时，可以通过指定事件类型和回调函数来取消事件监听器的注册，如下代码：
+
+        function receiveData(data){
+          console.log("got data from file read stream:%j",data);
+        }
+        readStream.on("data",receiveData);
+        // ……
+        readStream.removeListener("data",receiveData);
+
+在上例中，最后一行把一个可能在将来被随时调用的事件监听器从事件发射器对象中删除。
+
+> 为了删除指定的事件监听器，就必须为回调函数命名，因为回调函数至少要在两处用到——增加和删除事件监听器。
+
+### 使用 .once()使回调函数最多执行一次
