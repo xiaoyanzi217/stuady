@@ -370,3 +370,49 @@
 > 为了删除指定的事件监听器，就必须为回调函数命名，因为回调函数至少要在两处用到——增加和删除事件监听器。
 
 ### 使用 .once()使回调函数最多执行一次
+
+如果想监听最多只发生一次的事件，或者只是对某个类型的事件第一次发生时感兴趣，则可以用 .once()函数。
+> 该方法增加了一个事件监听器，并在第一个事件发生后删除它。
+
+        function receiveData(data){
+        	console.log("got data from file read stream :%j",data);
+        }
+        readStream.once("data",receiveData);
+在上面的代码中，receiveData 函数只被调用一次，如果在 readStream 对象上发射 data 事件，receiveData 回调函数仅会被触发一次。
+
+这是一个方便的方法，因为很容易实现它，如下所示：
+
+        var EventEmitter = require ("events").EventEmitter;
+        EventEmitter.prototype.once = function(type,callback){
+          var that =this;
+          this.on(type,function listener(){
+            that.removeListener(type,listener);
+              callback.apply(that,arguments);
+            })
+        }
+
+在上面的代码中重新定义了 EventEmitter.prototype.once 函数，这就等于重新定义了继承自 EventEmitter 所有对象的 once 方法。
+
+### 使用 .removeAllEventListener()从事件发射器删除所有事件监听器
+
+可以从事件发射器中删除所有针对某一指定类型的事件而注册的事件监听器，如下所示：
+
+      emitter.removeAllListener("SIGTREM");
+
+例如，如果想删除进程中断事件的所有事件监听器，可以这样做，如下所示：
+
+      precess.removeAllListener("SIGTREM");
+
+## 创建事件发射器
+
+### 从 node 事件发射器继承
+
+如果有兴趣，在自己的应用自始至终都使用 Node 事件发射器，那么可以创建一个继承自 EventEmitter 伪类，实例代码如下：
+
+      util = require ('util');
+      var EventEmitter = require ('events').EventEmitter;
+      // here is the MyClass constructor;
+      var MyClass = function(){
+
+      }
+        util.inherits(MyClass,EventEmitter);
